@@ -1,0 +1,56 @@
+# Development Overrides
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+version: "3.9"
+
+services:
+  osint-pipeline:
+    # Use dev stage with full dependencies
+    build:
+      target: dev
+    
+    # Enable hot-reload
+    volumes:
+      - ./:/app
+      - ./tests:/app/tests
+      - ./src:/app/src
+    
+    # Disable read-only for dev
+    read_only: false
+    
+    # Debug mode
+    environment:
+      - DEBUG=true
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONFAULTHANDLER=1
+    
+    # Increased resource limits for debugging
+    deploy:
+      resources:
+        limits:
+          cpus: '8.0'
+          memory: 8G
+
+
+  # Add VS Code Server for remote IDE access
+  codespaces:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    image: osint-pipeline:dev
+    container_name: osint-codespaces
+    
+    command: >
+      bash -c "pip install codeserver && 
+               codeserver --port 8081 --host 0.0.0.0 && 
+               tail -f /dev/null"
+    
+    ports:
+      - "8081:8081"
+    
+    volumes:
+      - ./:/workspaces
+    
+    depends_on:
+      - osint-pipeline

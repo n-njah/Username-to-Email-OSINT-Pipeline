@@ -1,0 +1,235 @@
+# OSINT Pipeline Configuration
+# Copy to config.yaml and customize for your environment
+
+# =============================================================================
+# Runtime Settings
+# =============================================================================
+runtime:
+  # Timeout per request (seconds)
+  request_timeout: 30
+  
+  # Total execution timeout (minutes)
+  execution_timeout: 30
+  
+  # Number of concurrent threads
+  threads: 10
+  
+  # Enable debug logging
+  debug: false
+  
+  # Randomize request order
+  randomize_requests: true
+
+
+# =============================================================================
+# Rate Limiting
+# =============================================================================
+rate_limits:
+  # Delay between requests to same platform (seconds)
+  per_site_delay: 1.0
+  
+  # Global delay between all requests (seconds)
+  global_delay: 0.5
+  
+  # Max requests per minute per platform
+  requests_per_minute: 60
+  
+  # Backoff strategy: exponential, linear, constant
+  backoff_strategy: exponential
+  
+  # Initial backoff (seconds)
+  initial_backoff: 1.0
+  
+  # Max backoff (seconds)
+  max_backoff: 30.0
+
+
+# =============================================================================
+# Module Configuration
+# =============================================================================
+modules:
+  # Username Enumeration
+  enumeration:
+    enabled: true
+    engines:
+      - maigret
+      - sherlock
+    # Whitelist specific sites (empty = all)
+    site_whitelist: []
+    # Blacklist specific sites
+    site_blacklist: []
+  
+  # Gravatar Pivot
+  gravatar:
+    enabled: true
+    # Additional name elements for candidate generation
+    extra_elements: []
+    # Domains to test
+    domains:
+      - gmail.com
+      - yahoo.com
+      - hotmail.com
+      - outlook.com
+      - icloud.com
+      - protonmail.com
+  
+  # GitHub Pivot
+  github:
+    enabled: true
+    # API token for higher rate limits
+    token_env_var: GITHUB_TOKEN
+    # Max commits to check per user
+    max_commits: 100
+    # Max repos to process
+    max_repos: 10
+  
+  # Breach Database Lookup
+  breach:
+    enabled: true
+    # API key environment variable
+    api_key_env_var: BREACH_API_KEY
+    # Services to query (comma-separated)
+    services:
+      - intelx
+      - dehashed
+      - haveibeenpwned
+    # Exclude sensitive breach types
+    exclude_sensitive: false
+  
+  # Profile Scraping
+  profile_scrape:
+    enabled: true
+    # User-agent string
+    user_agent: "OSINT-Pipeline/1.0"
+    # Platforms to prioritize
+    priority_platforms:
+      - twitter
+      - github
+      - linkedin
+      - reddit
+
+
+# =============================================================================
+# Output Configuration
+# =============================================================================
+output:
+  # Default format
+  default_format: json
+  
+  # Output directory
+  output_dir: ./results
+  
+  # Include raw data in reports
+  include_raw_data: false
+  
+  # Mask emails in shared reports
+  mask_emails: false
+  
+  # Generate all formats
+  generate_all_formats: false
+  
+  # Compression
+  compress_reports: false
+
+
+# =============================================================================
+# Privacy & Security
+# =============================================================================
+privacy:
+  # Use Tor for anonymity (requires tor service)
+  use_tor: false
+  
+  # SOCKS5 proxy URL
+  proxy_url: null
+  
+  # Rotate user-agents
+  rotate_user_agents: true
+  
+  # Clear cache after each run
+  clear_cache: true
+  
+  # Encryption at rest for sensitive outputs
+  encrypt_outputs: false
+
+
+# =============================================================================
+# MCP Agent Settings
+# =============================================================================
+mcp:
+  # Enable MCP-compatible endpoints
+  enabled: true
+  
+  # MCP server host
+  host: 127.0.0.1
+  
+  # MCP server port
+  port: 8080
+  
+  # Authentication token (optional)
+  auth_token_env: MCP_AUTH_TOKEN
+
+
+# =============================================================================
+# Caching
+# =============================================================================
+cache:
+  # Enable result caching
+  enabled: true
+  
+  # Cache duration (hours)
+  ttl: 24
+  
+  # Backend: memory, redis, filesystem
+  backend: filesystem
+  
+  # Cache directory
+  directory: ./cache
+  
+  # Max cache size (MB)
+  max_size_mb: 1000
+
+
+# =============================================================================
+# Alerting
+# =============================================================================
+alerting:
+  # Send notifications on completion
+  notify_on_complete: false
+  
+  # Webhook URL (Slack, Discord, etc.)
+  webhook_url: null
+  
+  # Alert on high-confidence finds only
+  alert_threshold: 75
+
+
+# =============================================================================
+# Experimental Features
+# =============================================================================
+experimental:
+  # AI-powered correlation (future)
+  ai_correlation: false
+  
+  # Machine learning confidence scoring
+  ml_scoring: false
+  
+  # Distributed processing
+  distributed: false
+  
+  # WebSocket streaming of results
+  websocket_streaming: false
+
+
+# =============================================================================
+# Tags for Organization
+# =============================================================================
+tags:
+  # Custom tags for report classification
+  - "investigation"
+  - "authorized"
+  
+  # Project identifier
+  project_id: null
+  
+  # Case reference
+  case_number: null

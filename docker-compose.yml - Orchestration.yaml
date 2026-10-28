@@ -1,0 +1,184 @@
+version: "3.9"
+
+services:
+  # Main OSINT Pipeline
+  osint-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    container_name: osint-pipeline
+    restart: unless-stopped
+    
+    # Run as non-root
+    user: "1000:1000"
+    
+    # Environment variables
+    environment:
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - BREACH_API_KEY=${BREACH_API_KEY:-}
+      - TOR_ENABLED=${TOR_ENABLED:-false}
+      - PROXY_URL=${PROXY_URL:-}
+      - PYTHONUNBUFFERED=1
+    
+    # Volume mounts
+    volumes:
+      # Persist scan results
+      - ./results:/app/results
+      # Load custom config
+      - ./config.yaml:/app/config.yaml:ro
+      # Tor socket (optional)
+      - tor_socket:/var/run/tor:ro
+    
+    # Network configuration
+    networks:
+      - osint-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '4.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 512M
+    
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined  # Remove in production!
+    
+    # Read-only filesystem (except volumes)
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M
+      - /run:size=50M
+    
+    # Logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; print('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+
+  # Tor Proxy (optional - for anonymization)
+  tor:
+    image: linuxserver/tor:latest
+    container_name: tor-proxy
+    restart: unless-stopped
+    
+    environment:
+      - TZ=UTC
+    
+    volumes:
+      - tor_config:/config
+    
+    networks:
+      - osint-network
+    
+    ports:
+      - "9050:9050"  # SOCKS5 proxy
+    
+    security_opt:
+      - no-new-privileges:true
+
+
+  # Redis Cache (optional - for rate limiting/state)
+  redis:
+    image: redis:7-alpine
+    container_name: osint-redis
+    restart: unless-stopped
+    
+    volumes:
+      - redis_data:/data
+    
+    networks:
+      - osint-network
+    
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+
+  # API Gateway (optional - REST interface)
+  api-gateway:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: osint-api
+    restart: unless-stopped
+    
+    ports:
+      - "8080:8080"
+    
+    environment:
+      - REDIS_HOST=redis
+      - PIPELINE_HOST=osint-pipeline
+    
+    depends_on:
+      - redis
+      - osint-pipeline
+    
+    networks:
+      - osint-network
+
+
+networks:
+  osint-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+
+volumes:
+  tor_config:
+  tor_socket:
+  redis_data:
+  results:
+    driver: local
+
+
+# =============================================================================
+# Override for Development
+# =============================================================================
+# docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+
+# =============================================================================
+# Override for CI/CD Testing
+# =============================================================================
+# docker-compose -f docker-compose.yml -f docker-compose.test.yml up
+
+
+# =============================================================================
+# Quick Commands Reference
+# =============================================================================
+#
+# Build and run:
+#   docker-compose up -d
+#
+# Run a scan:
+#   docker-compose exec osint-pipeline python main.py --username target_handle --output /results/report.json
+#
+# View logs:
+#   docker-compose logs -f osint-pipeline
+#
+# Stop all:
+#   docker-compose down
+#
+# Clean everything (including volumes):
+#   docker-compose down -v
+#
+# With Tor enabled:
+#   TOR_ENABLED=true docker-compose up -d
+#   # Then use: --proxy socks5://tor:9050:9050
+#

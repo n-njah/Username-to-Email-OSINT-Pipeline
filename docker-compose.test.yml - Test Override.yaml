@@ -1,0 +1,40 @@
+# Test Configuration Overrides
+# docker-compose -f docker-compose.yml -f docker-compose.test.yml up
+
+version: "3.9"
+
+services:
+  osint-pipeline:
+    # Use minimal production build
+    build:
+      target: production
+    
+    # Disable external network access for unit tests
+    network_mode: none
+    
+    # Mount test fixtures
+    volumes:
+      - ./tests/fixtures:/app/tests/fixtures:ro
+      - ./tests/output:/app/tests/output
+    
+    environment:
+      - TESTING=true
+      - MOCK_ALL_EXTERNAL=true
+      
+  # Mock External Services for Testing
+  mock-breaches:
+    image: alpine:latest
+    container_name: mock-breaches
+    command: >
+      sh -c "apk add py3-flask && 
+             echo 'Mock breach service running on port 5000'"
+    ports:
+      - "5000:5000"
+    
+  mock-github:
+    image: alpine:latest
+    container_name: mock-github
+    command: >
+      sh -c "echo 'Mock GitHub API on port 8082'"
+    ports:
+      - "8082:8082"
