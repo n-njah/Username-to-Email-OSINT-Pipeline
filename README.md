@@ -75,8 +75,8 @@ username-to-email-osint/
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/username-to-email-osint.git
-cd username-to-email-osint
+git clone https://github.com/n-njah/Username-to-Email-OSINT-Pipeline.git
+cd Username-to-Email-OSINT-Pipeline
 
 # Create virtual environment
 python -m venv venv
@@ -425,8 +425,8 @@ pre-commit run --all-files
 
 ```bash
 # Clone and setup
-git clone https://github.com/YOUR_USERNAME/username-to-email-osint.git
-cd username-to-email-osint
+git clone https://github.com/n-njah/Username-to-Email-OSINT-Pipeline.git
+cd Username-to-Email-OSINT-Pipeline
 
 # Create virtual environment
 python -m venv venv
